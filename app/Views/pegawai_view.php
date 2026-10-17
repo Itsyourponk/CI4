@@ -23,8 +23,8 @@
                 <!-- TOMBOL PENCARIAN -->
                 <form action="" method="get">
                     <div class="input-group mb-3">
-                        <input type="text" class="form-control" name="katakunci" placeholder="masukkan kata kunci">
-                        <button class="btn btn-outline-secondary" type="button" id="button-addon2">Cari</button>
+                        <input type="text" class="form-control" name="katakunci" value ="<?php echo $katakunci; ?>" placeholder="masukkan kata kunci">
+                        <button class="btn btn-outline-secondary" type="submit" id="button-addon2">Cari</button>
                     </div>
                 </form>
 
@@ -93,7 +93,7 @@
                             </div>
 
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-secondary tombol-tutup" data-bs-dismiss="modal">Batal</button>
                                 <button type="button" class="btn btn-primary" id="tombolSimpan">Simpan</button>
                             </div>
 
@@ -114,20 +114,34 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th scope="row">1</th>
-                            <td>Nama Pegawai 1</td>
-                            <td>Pegawai1@email.com</td>
-                            <td>HR</td>
-                            <td>Alamat Pegawai 1</td>
-                            <td>
-                                <button type="button" class="btn btn-warning">Edit</button>
-                                <button type="button" class="btn btn-danger">Hapus</button>
-                            </td>
-                        </tr>
+                        <?php $nomor = 0; ?>
+                        <?php
+                        foreach ($dataPegawai as $k => $v) {
+                            ?> 
+                            <tr>
+                                <td><?= ++$nomor; ?></td>
+                                <td><?= ($v['nama']) ?></td>
+                                <td><?= ($v['email']) ?></td>
+                                <td><?= ($v['bidang']) ?></td>
+                                <td><?= ($v['alamat']) ?></td>
+                                <td>
+                                    <!-- Tombol Aksi -->
+                                    <button type= "button"btn class="btn btn-warning btn-sm">Edit</button>
+                                    <button type= "button"btn class="btn btn-danger btn-sm">Hapus</button>
+                                </td>
+                            </tr>
+                        <?php } ?>
+                      
                     </tbody>
                 </table>
-
+                <!-- PAGINATION -->
+                <?php
+                $linkPagination = $pager->links();
+                $linkPagination = str_replace('<li class="active">', '<li class="page-item active">', $linkPagination);
+                $linkPagination = str_replace('<li>', '<li class="page-item">', $linkPagination);
+                $linkPagination = str_replace('<a', '<a class="page-link"', $linkPagination);
+                echo $linkPagination;
+                ?>
             </div>
         </div>
     </div>
@@ -138,35 +152,50 @@
 
     <!-- SCRIPT AJAX SIMPAN -->
     <script>
-      $('#tombolSimpan').on('click', function() {
-          var nama   = $('#nama').val();
-          var email  = $('#email').val();
-          var bidang = $('#bidang').val();
-          var alamat = $('#alamat').val();
+  
+  function bersihkan() {
+      $('#nama').val('');
+      $('#email').val('');
+      $('#bidang').val('');
+      $('#alamat').val('');
+  }
 
-          $.ajax({
-              url: "<?php echo site_url('pegawai/simpan') ?>",
-              type: "POST",
-              data: {
-                  nama: nama,
-                  email: email,
-                  bidang: bidang,
-                  alamat: alamat
-              },
-              success: function(hasil) {
-                  var $obj = $.parseJSON(hasil);
-                  if ($obj.sukses == false) {
-                      $('.sukses').hide();
-                      $('.error').show();
-                      $('.error').html($obj.error);
-                  } else {
-                      $('.error').hide();
-                      $('.sukses').show();
-                      $('.sukses').html($obj.sukses);
-                  }
+  $('#tombolSimpan').on('click', function() {
+      var nama   = $('#nama').val();
+      var email  = $('#email').val();
+      var bidang = $('#bidang').val();
+      var alamat = $('#alamat').val();
+
+      $.ajax({
+          url: "<?php echo site_url('pegawai/simpan') ?>",
+          type: "POST",
+          data: {
+              nama: nama,
+              email: email,
+              bidang: bidang,
+              alamat: alamat
+          },
+          success: function(hasil) {
+              var $obj = $.parseJSON(hasil);
+              if ($obj.sukses == false) {
+                  $('.sukses').hide();
+                  $('.error').show().html($obj.error);
+              } else {
+                  $('.error').hide();
+                  $('.sukses').show().html($obj.sukses);
+                  bersihkan(); // Mengosongkan form input
               }
-          });
+          }
       });
-    </script>
+  });
+
+  $('.tombol-tutup').on('click', function() {
+      if ($('.sukses').is(':visible')) {
+          window.location.href = "<?php echo current_url(). "?" .$_SERVER['QUERY_STRING'] ?>";
+      }
+      $('.alert').hide();
+      bersihkan();
+  });
+</script>
 </body>
 </html>

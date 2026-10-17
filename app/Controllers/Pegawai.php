@@ -1,19 +1,15 @@
 <?php
 
 namespace App\Controllers;
+use App\Models\ModelPegawai;
+use PhpParser\Node\Expr\FuncCall;
 
 class Pegawai extends BaseController
 {
-    protected $model;
-
+    protected ModelPegawai $model;
     public function __construct()
     {
         $this->model = new \App\Models\ModelPegawai();
-    }
-
-    public function index()
-    {
-        return view('pegawai_view');
     }
 
     public function simpan()
@@ -49,9 +45,8 @@ class Pegawai extends BaseController
         ];
 
         $validasi->setRules($aturan);
-
         if ($validasi->withRequest($this->request)->run()) {
-            // TAMPUNG DATA DARI FORM
+            
             $dataSimpan = [
                 'nama'   => $this->request->getPost('nama'),
                 'email'  => $this->request->getPost('email'),
@@ -59,9 +54,7 @@ class Pegawai extends BaseController
                 'alamat' => $this->request->getPost('alamat'),
             ];
 
-            
             $this->model->save($dataSimpan);
-
             $hasil['sukses'] = "Berhasil memasukan data";
             $hasil['error']  = true;
         } else {
@@ -70,5 +63,22 @@ class Pegawai extends BaseController
         }
 
         return json_encode($hasil);
+    }
+    public function index(): string
+    {
+        $jumlahBaris = 4;
+        $katakunci = $this->request->getGet('katakunci');
+        if($katakunci){
+            $pencarian = $this->model->cari($katakunci);
+        } else {
+            $pencarian = $this->model;
+        }
+
+        $halamanSekarang = $this->request->getVar('page') ? $this->request->getVar('page') : 1;
+        $data ['dataPegawai'] = $pencarian->orderBy('id', 'desc')->paginate($jumlahBaris);
+        $data ['pager'] = $this->model->pager;
+        $data ['nomor'] = ($jumlahBaris *  ($halamanSekarang - 1));
+        $data ['katakunci'] = $katakunci ??'';
+        return view('pegawai_view', $data);
     }
 }
