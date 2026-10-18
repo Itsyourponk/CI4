@@ -20,6 +20,14 @@
             </div>
             <div class="card-body">
 
+            <!-- NOTIFIKASI BERHASIL HAPUS -->
+            <?php if (session()->getFlashdata('succes')) : ?>
+                    <div class="alert alert-success alert-succes alert-dismissible fade show" role="alert">
+                        <?= session()->getFlashdata('succes'); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <?php endif; ?>
+
                 <!-- TOMBOL PENCARIAN -->
                 <form action="" method="get">
                     <div class="input-group mb-3">
@@ -39,7 +47,7 @@
                         <div class="modal-content">
 
                             <div class="modal-header">
-                                <h1 class="modal-title fs-5" id="exampleModalLabel">Form Tambah Data Pegawai</h1>
+                                <h1 class="modal-title fs-5" id="exampleModalLabel">Data Pegawai</h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
 
@@ -52,6 +60,7 @@
 
                                 <!-- FORM INPUT -->
                                 <form action="" method="post">
+                                    <input type="hidden" id="id" name="id">
                                     <!-- Input Nama -->
                                     <div class="mb-3 row">
                                         <label for="nama" class="col-sm-3 col-form-label">Nama</label>
@@ -72,12 +81,11 @@
                                     <div class="mb-3 row">
                                         <label for="bidang" class="col-sm-3 col-form-label">Bidang</label>
                                         <div class="col-sm-9">
-                                            <select class="form-select" id="bidang" name="bidang">
+                                            <select name="bidang" id="bidang" class="form-select">
                                                 <option value="">-- Pilih Bidang --</option>
-                                                <option value="HR">HR</option>
-                                                <option value="Finance">Finance</option>
-                                                <option value="IT">IT</option>
-                                                <option value="Marketing">Marketing</option>
+                                                <option value="hr">HR</option>
+                                                <option value="finance">Finance</option>
+                                                <option value="marketing">Marketing</option>
                                             </select>
                                         </div>
                                     </div>
@@ -102,6 +110,7 @@
                 </div>
 
                 <!-- Tabel View Data Pegawai -->
+                 <div id="tabelPegawai">
                 <table class="table">
                     <thead>
                         <tr>
@@ -126,8 +135,8 @@
                                 <td><?= ($v['alamat']) ?></td>
                                 <td>
                                     <!-- Tombol Aksi -->
-                                    <button type= "button"btn class="btn btn-warning btn-sm">Edit</button>
-                                    <button type= "button"btn class="btn btn-danger btn-sm">Hapus</button>
+                                    <button type= "button" btn class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="edit (<?= $v['id'] ?>)">Edit</button>
+                                    <button type= "button" btn class="btn btn-danger btn-sm" onclick="hapus (<?= $v['id'] ?>)">Hapus</button>
                                 </td>
                             </tr>
                         <?php } ?>
@@ -135,13 +144,10 @@
                     </tbody>
                 </table>
                 <!-- PAGINATION -->
-                <?php
-                $linkPagination = $pager->links();
-                $linkPagination = str_replace('<li class="active">', '<li class="page-item active">', $linkPagination);
-                $linkPagination = str_replace('<li>', '<li class="page-item">', $linkPagination);
-                $linkPagination = str_replace('<a', '<a class="page-link"', $linkPagination);
-                echo $linkPagination;
-                ?>
+                    <?php
+                    echo $pager->links('default', 'bootstrap_pagination'); 
+                    ?>
+                 </div>
             </div>
         </div>
     </div>
@@ -152,28 +158,58 @@
 
     <!-- SCRIPT AJAX SIMPAN -->
     <script>
-  
-  function bersihkan() {
-      $('#nama').val('');
-      $('#email').val('');
-      $('#bidang').val('');
-      $('#alamat').val('');
+        function tampilDataPegawai() {
+            $('#tabelPegawai').load(window.location.href + ' #tabelPegawai');
+        }
+        function hapus(id) {
+          var result = confirm("Yakin ingin menghapus data ini?");
+          if (result) {
+              window.location.href = "<?php echo site_url('pegawai/hapus') ?>/" + id;
+                      }
+                  }
+          
+       function edit(id) {
+          $.ajax({
+              url: "<?php echo site_url('pegawai/edit') ?>/" + id,
+              type: "GET",
+              
+              success: function(hasil) {
+                var $obj = $.parseJSON(hasil);
+                if ($obj.id != '') {
+                    $('#id').val($obj.id);
+                    $('#nama').val($obj.nama);
+                    $('#email').val($obj.email);
+                    $('#bidang').val($obj.bidang);
+                    $('#alamat').val($obj.alamat);
+                }
+              }
+          });
+      }
+
+        function bersihkan() {
+    $('#id').val('');
+    $('#nama').val('');
+    $('#email').val('');
+    $('#bidang').val('');
+    $('#alamat').val('');
   }
 
   $('#tombolSimpan').on('click', function() {
-      var nama   = $('#nama').val();
-      var email  = $('#email').val();
-      var bidang = $('#bidang').val();
-      var alamat = $('#alamat').val();
+    var id     = $('#id').val();
+    var nama   = $('#nama').val();
+    var email  = $('#email').val();
+    var bidang = $('#bidang').val();
+    var alamat = $('#alamat').val();
 
       $.ajax({
           url: "<?php echo site_url('pegawai/simpan') ?>",
           type: "POST",
           data: {
-              nama: nama,
-              email: email,
-              bidang: bidang,
-              alamat: alamat
+            id: id,
+            nama: nama,
+            email: email,
+            bidang: bidang,
+            alamat: alamat
           },
           success: function(hasil) {
               var $obj = $.parseJSON(hasil);
@@ -183,10 +219,17 @@
               } else {
                   $('.error').hide();
                   $('.sukses').show().html($obj.sukses);
-                  bersihkan(); // Mengosongkan form input
+                  bersihkan();
+
+                  tampilDataPegawai();
+                  setTimeout(function() {
+                      $('#exampleModal').modal('hide');
+                      $('alert').hide();
+                  }, 1000);
               }
           }
       });
+      
   });
 
   $('.tombol-tutup').on('click', function() {

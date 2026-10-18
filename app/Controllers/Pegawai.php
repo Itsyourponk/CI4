@@ -11,6 +11,16 @@ class Pegawai extends BaseController
     {
         $this->model = new \App\Models\ModelPegawai();
     }
+    public function hapus($id)
+    {
+        $this->model->delete($id);
+        return redirect()->to(site_url('/'))->with('success', 'Data berhasil dihapus');
+    }
+
+    public function edit($id)
+    {   
+        return json_encode($this->model->find($id));
+    }
 
     public function simpan()
     {
@@ -46,8 +56,10 @@ class Pegawai extends BaseController
 
         $validasi->setRules($aturan);
         if ($validasi->withRequest($this->request)->run()) {
-            
-            $dataSimpan = [
+
+        $dataSimpan = [            
+  
+                'id'     => $this->request->getPost('id'),
                 'nama'   => $this->request->getPost('nama'),
                 'email'  => $this->request->getPost('email'),
                 'bidang' => $this->request->getPost('bidang'),
@@ -56,7 +68,7 @@ class Pegawai extends BaseController
 
             $this->model->save($dataSimpan);
             $hasil['sukses'] = "Berhasil memasukan data";
-            $hasil['error']  = true;
+            $hasil['error']  = false;
         } else {
             $hasil['sukses'] = false;
             $hasil['error']  = $validasi->listErrors();
@@ -65,20 +77,20 @@ class Pegawai extends BaseController
         return json_encode($hasil);
     }
     public function index(): string
-    {
-        $jumlahBaris = 4;
-        $katakunci = $this->request->getGet('katakunci');
-        if($katakunci){
-            $pencarian = $this->model->cari($katakunci);
-        } else {
-            $pencarian = $this->model;
-        }
-
-        $halamanSekarang = $this->request->getVar('page') ? $this->request->getVar('page') : 1;
-        $data ['dataPegawai'] = $pencarian->orderBy('id', 'desc')->paginate($jumlahBaris);
-        $data ['pager'] = $this->model->pager;
-        $data ['nomor'] = ($jumlahBaris *  ($halamanSekarang - 1));
-        $data ['katakunci'] = $katakunci ??'';
-        return view('pegawai_view', $data);
+{
+    $jumlahBaris = 4;
+    $katakunci = $this->request->getGet('katakunci');
+    if($katakunci){
+        $pencarian = $this->model->cari($katakunci);
+    } else {
+        $pencarian = $this->model;
     }
+    $halamanSekarang = $this->request->getVar('page') ? $this->request->getVar('page') : 1;
+    $data['dataPegawai'] = $pencarian->orderBy('id', 'desc')->paginate($jumlahBaris, 'default');
+    $data['pager'] = $this->model->pager;
+    $data['nomor'] = ($jumlahBaris * ($halamanSekarang - 1));
+    $data['katakunci'] = $katakunci ?? '';
+    
+    return view('pegawai_view', $data);
+}
 }
